@@ -17,21 +17,21 @@ function App ()
       <NavbarMenu />
 
       {/* Routes */ }
-      {/* <AuthProvider> */ }
-      <Routes>
-        <Route path='/signup' element={ <SignUpForm /> } />
-        <Route path='/login' element={ <Login /> } />
-        <Route
-          path='/home'
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        <Route path='/logout' element={ <LogoutButton /> } />
-      </Routes>
-      {/* </AuthProvider> */ }
+      <AuthProvider>
+        <Routes>
+          <Route path='/signup' element={ <SignUpForm /> } />
+          <Route path='/login' element={ <Login /> } />
+          <Route
+            path='/home'
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route path='/logout' element={ <LogoutButton /> } />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
 
 
