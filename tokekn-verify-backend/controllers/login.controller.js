@@ -7,7 +7,7 @@ require( 'dotenv' ).config();
 
 const generateAccessToken = ( user ) =>
 {
-       return jwt.sign( { id: user.id, userName: user.userName, email: user.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' } );
+       return jwt.sign( { id: user.id, userName: user.userName, email: user.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '18m' } );
 };
 const generateRefreshToken = ( user ) =>
 {
@@ -21,7 +21,7 @@ const loginUser = async ( req, res ) =>
 
        try
        {
-              const user = findUserByEmail( email );
+              const user = await findUserByEmail( email ); // Add await here
               if ( !user )
               {
                      return res.status( 404 ).json( { message: "user not found" } );
@@ -31,24 +31,28 @@ const loginUser = async ( req, res ) =>
               {
                      return res.status( 401 ).json( { message: 'invalid credentials' } );
               }
-              // const token = jwt.sign( { id: user.id, userName: user.userName, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' } );
-              // res.json( { token } );
+
               const accessToken = generateAccessToken( user );
               const refreshToken = generateRefreshToken( user );
+
               res.cookie( 'refreshToken', refreshToken, {
                      httpOnly: true,
                      sameSite: 'strict',
-                     secure: false // Set true in production with HTTPS
+                     secure: false, // Set true in production with HTTPS
+                     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
               } );
               res.cookie( 'accessToken', accessToken, {
-                     httpOnly: true,
-                     sameSite: 'strict',
-                     secure: false // Set true in production with HTTPS
+                     httpOnly: false,
+                     secure: true,
+                     sameSite: 'Strict',
+                     path: '/',
+                     maxAge: 18 * 60 * 1000 // 18 minutes
               } );
 
-
+              res.status( 200 ).json( { message: 'Login successful' } );
        } catch ( err )
        {
+              console.error( err ); // Log the error for debugging
               res.status( 500 ).json( { message: 'server error', error: err.message } );
        }
 };

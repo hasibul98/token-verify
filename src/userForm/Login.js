@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const DivContainer = styled.div`
        display: flex;
@@ -90,18 +91,23 @@ function Login ()
               setLoginData( { ...loginData, [ name ]: value } );
               // console.log( loginData );
        };
-       const handleSubmit = ( e ) =>
+       const navigate = useNavigate();
+
+       const handleSubmit = async ( e ) =>
        {
               e.preventDefault();
-              console.log( loginData );
-              if ( !loginData.email )
+
+              try
               {
-                     alert( 'please fill the emil' );
-                     return;
-              } else if ( !loginData.password )
+                     const response = await axios.post( 'http://localhost:5000/api/login', loginData, {
+                            withCredentials: true,
+                     } );
+
+                     // লগইন সফল হলে হোম পেজে রিডাইরেক্ট
+                     navigate( '/home' );
+              } catch ( error )
               {
-                     alert( 'pleae fill the password' );
-                     return;
+                     console.error( 'Login error:', error );
               }
        };
 

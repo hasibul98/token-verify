@@ -28,6 +28,8 @@ function NavbarMenu ()
               <Nav>
                      <Anchor to='/signup' > Sign up </Anchor>
                      <Anchor to='/login' > Login </Anchor>
+                     <Anchor to='/home' > Home </Anchor>
+                     <Anchor to='/logout' > Logout </Anchor>
               </Nav>
 
        );
