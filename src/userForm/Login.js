@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
+// import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import api from '../axios';
 
 const DivContainer = styled.div`
        display: flex;
@@ -78,7 +79,7 @@ function Login ()
 {
        const [ loginData, setLoginData ] = useState( { email: '', password: '' } );
        const [ show, setShow ] = useState( false );
-       const [ token, setToken ] = useState( null );
+
 
        const togglePaaword = () =>
        {
@@ -99,15 +100,12 @@ function Login ()
 
               try
               {
-                     const response = await axios.post( 'http://localhost:5000/api/login', loginData, {
-                            withCredentials: true,
-                     } );
-
-                     // লগইন সফল হলে হোম পেজে রিডাইরেক্ট
+                     const response = await api.post( 'login', loginData );
+                     console.log( 'Login response:', response.data ); // Check backend response
                      navigate( '/home' );
               } catch ( error )
               {
-                     console.error( 'Login error:', error );
+                     console.error( 'Login error:', error.response?.data || error.message );
               }
        };
 

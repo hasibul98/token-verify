@@ -1,13 +1,17 @@
 const express = require( 'express' );
 const cors = require( 'cors' );
+const router = express.Router();
 const cookieParser = require( 'cookie-parser' );
 const bodyParser = require( 'body-parser' );
 const userRoutes = require( './routes/user.route' );
 const loginRoutes = require( './routes/login.route' );
+const authRoute = require( './routes/auth.route.js' );
+const verifyRoute = require( './routes/verifyToken.route.js' );
+
 require( 'dotenv' ).config();
 const jwt = require( 'jsonwebtoken' );
+const db = require( './config/db.config.js' );
 
-const authenticateToken = require( './controllers/authenticateToken' );
 
 
 const app = express();
@@ -22,30 +26,48 @@ app.use( cors( {
        credentials: true,
 } ) );
 app.use( cookieParser() );
-
+app.use( '/api', router );
 app.use( bodyParser.json() );
+app.use( '/api', authRoute );
+app.use( '/api', verifyRoute );
 app.use( '/api', userRoutes );
 app.use( '/api', loginRoutes );
 
 
-app.post( '/api/refresh', ( req, res ) =>
+router.get( '/refresh', async ( req, res ) =>
 {
        const refreshToken = req.cookies.refreshToken;
+
        if ( !refreshToken )
        {
-              return res.status( 401 ).json( { message: 'Refresh Token is missing. Please log in again.' } );
+              return res.status( 401 ).json( { message: 'Unauthorized' } );
        }
 
-       jwt.verify( refreshToken, process.env.REFRESH_TOKEN_SECRET, ( err, user ) =>
+       try
        {
-              if ( err )
+              const [ rows ] = await db.execute(
+                     'SELECT is_revoked FROM refresh_tokens WHERE refresh_token = ?',
+                     [ refreshToken ]
+              );
+
+              if ( rows.length === 0 || rows[ 0 ].is_revoked )
               {
-                     return res.status( 403 ).json( { message: 'Invalid Refresh Token. Please log in again.' } );
+                     return res.status( 403 ).json( { message: 'Refresh token is revoked' } );
               }
 
-              const newAccessToken = jwt.sign( { id: user.id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' } );
-              res.json( { accessToken: newAccessToken } );
-       } );
+              const user = jwt.verify( refreshToken, process.env.REFRESH_TOKEN_SECRET );
+              const newAccessToken = jwt.sign(
+                     { id: user.id, userName: user.userName, email: user.email },
+                     process.env.ACCESS_TOKEN_SECRET,
+                     { expiresIn: '18m' }
+              );
+
+              res.status( 200 ).json( { accessToken: newAccessToken } );
+       } catch ( err )
+       {
+              console.error( err );
+              res.status( 403 ).json( { message: 'Invalid or expired refresh token' } );
+       }
 } );
 
 const rateLimit = require( 'express-rate-limit' );
