@@ -1,58 +1,60 @@
-// components/ProtectedRoute.jsx
-
-import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import api from '../axios'; // তোমার axios setup
+import { useEffect, useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import api from '../axios';
 
-const ProtectedRoute = ( { children } ) =>
+const PrivateRoute = ( { children } ) =>
 {
+       const navigate = useNavigate();
        const [ isLoading, setIsLoading ] = useState( true );
        const [ isAuthenticated, setIsAuthenticated ] = useState( false );
-       const location = useLocation();
 
        useEffect( () =>
        {
-              const verifyToken = async () =>
+              const checkToken = async () =>
               {
-                     const token = Cookies.get( 'accessToken' );
+                     const accessToken = Cookies.get( 'access_token' );
 
-                     if ( !token )
+                     if ( !accessToken )
                      {
-                            setIsAuthenticated( false );
                             setIsLoading( false );
-                            return;
+                            return navigate( '/login' );
                      }
 
                      try
                      {
-                            const response = await api.get( '/verify' ); // backend এ যাচ্ছি
-                            if ( response.data.valid )
-                            {
-                                   setIsAuthenticated( true );
-                            } else
+                            const response = await api.get( '/check-token', {
+                                   withCredentials: true, // Send cookies with request
+                            } );
+
+                            if ( response.data.is_revoked === 1 )
                             {
                                    setIsAuthenticated( false );
+                                   return navigate( '/login' );
                             }
+
+                            setIsAuthenticated( true );
                      } catch ( error )
                      {
-                            console.error( 'Token verification failed:', error );
-                            setIsAuthenticated( false );
+                            console.error( 'Error checking token:', error.message );
+                            navigate( '/login' );
                      } finally
                      {
-                            setIsLoading( false );
+                            setIsLoading( false ); // Ensure loading state is updated
                      }
               };
 
-              verifyToken();
-       }, [] );
+              checkToken();
+       }, [ navigate ] );
 
+       // Show loading state while checking token
        if ( isLoading )
        {
-              return <div>Loading...</div>; // তুমি চাইলে সুন্দর Loader component দিতে পারো
+              return <div>Loading...</div>;
        }
 
-       return isAuthenticated ? children : <Navigate to="/login" replace state={ { from: location } } />;
+       // Render children if authenticated, otherwise redirect to login
+       return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
-export default ProtectedRoute;
+export default PrivateRoute;
